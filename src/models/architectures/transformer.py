@@ -270,9 +270,9 @@ class TimeEncoding(nn.Module):
 flag3d_coarse_action_description = {}
 flag3d_text = []
 i = 0
-for text_name in os.listdir('/home/jinpeng/ACTOR/data/flag3d_txt/'):
+for text_name in os.listdir('data/flag3d_txt/'):
     if text_name.endswith('001.txt'):
-        f = open('/home/jinpeng/ACTOR/data/flag3d_txt/' + text_name)
+        f = open('data/flag3d_txt/' + text_name)
         line = f.readline()
         flag3d_coarse_action_description[i] = line
         flag3d_text.append(line)
