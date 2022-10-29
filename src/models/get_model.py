@@ -28,12 +28,12 @@ def get_model(parameters):
         parameters["outputxyz"] = "rcxyz" in parameters["lambdas"]
         return Model(encoder, decoder, **parameters).to(parameters["device"])
     else:
-        modeltype = "language_"+parameters["modeltype"]
+        modeltype = parameters["modeltype"]
         print("language:", modeltype)
-        archiname = "language_"+parameters["archiname"]
+        archiname = parameters["archiname"]
         print("language:", archiname)
 
-        archi_module = importlib.import_module(f'.architectures.{archiname}', package="src.models")
+        archi_module = importlib.import_module(f'.architectures.language_{archiname}', package="src.models")
         Encoder = archi_module.__getattribute__(f"Encoder_{archiname.upper()}")
         Decoder = archi_module.__getattribute__(f"Decoder_{archiname.upper()}")
 
