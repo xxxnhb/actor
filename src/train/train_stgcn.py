@@ -60,7 +60,6 @@ def main():
     model, datasets = get_model_and_data(parameters)
 
     datasets.pop("test")
-    print(datasets['test'])
     if parameters["dataset"] == "uestcpartial":
         dt = datasets["train"]
         normal_length = dt._oldN

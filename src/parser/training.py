@@ -13,6 +13,7 @@ def add_training_options(parser):
     group.add_argument("--num_epochs", type=int, required=True, help="number of epochs of training")
     group.add_argument("--lr", type=float, required=True, help="AdamW: learning rate")
     group.add_argument("--snapshot", type=int, required=True, help="frequency of saving model/viz")
+    group.add_argument("--language", action='store_true', default=False, help="if we want to use language")
     
 
 def parser():

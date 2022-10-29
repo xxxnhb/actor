@@ -9,20 +9,39 @@ ARCHINAMES = ["fc", "gru", "transformer", "transgru", "grutrans", "autotrans"]
 
 
 def get_model(parameters):
-    modeltype = parameters["modeltype"]
-    print(modeltype)
-    archiname = parameters["archiname"]
-    print(archiname)
+    if not parameters["language"]:
+        modeltype = parameters["modeltype"]
+        print(modeltype)
+        archiname = parameters["archiname"]
+        print(archiname)
 
-    archi_module = importlib.import_module(f'.architectures.{archiname}', package="src.models")
-    Encoder = archi_module.__getattribute__(f"Encoder_{archiname.upper()}")
-    Decoder = archi_module.__getattribute__(f"Decoder_{archiname.upper()}")
+        archi_module = importlib.import_module(f'.architectures.{archiname}', package="src.models")
+        Encoder = archi_module.__getattribute__(f"Encoder_{archiname.upper()}")
+        Decoder = archi_module.__getattribute__(f"Decoder_{archiname.upper()}")
 
-    model_module = importlib.import_module(f'.modeltype.{modeltype}', package="src.models")
-    Model = model_module.__getattribute__(f"{modeltype.upper()}")
+        model_module = importlib.import_module(f'.modeltype.{modeltype}', package="src.models")
+        Model = model_module.__getattribute__(f"{modeltype.upper()}")
 
-    encoder = Encoder(**parameters)
-    decoder = Decoder(**parameters)
-    
-    parameters["outputxyz"] = "rcxyz" in parameters["lambdas"]
-    return Model(encoder, decoder, **parameters).to(parameters["device"])
+        encoder = Encoder(**parameters)
+        decoder = Decoder(**parameters)
+
+        parameters["outputxyz"] = "rcxyz" in parameters["lambdas"]
+        return Model(encoder, decoder, **parameters).to(parameters["device"])
+    else:
+        modeltype = "language_"+parameters["modeltype"]
+        print("language:", modeltype)
+        archiname = "language_"+parameters["archiname"]
+        print("language:", archiname)
+
+        archi_module = importlib.import_module(f'.architectures.{archiname}', package="src.models")
+        Encoder = archi_module.__getattribute__(f"Encoder_{archiname.upper()}")
+        Decoder = archi_module.__getattribute__(f"Decoder_{archiname.upper()}")
+
+        model_module = importlib.import_module(f'.modeltype.{modeltype}', package="src.models")
+        Model = model_module.__getattribute__(f"{modeltype.upper()}")
+
+        encoder = Encoder(**parameters)
+        decoder = Decoder(**parameters)
+
+        parameters["outputxyz"] = "rcxyz" in parameters["lambdas"]
+        return Model(encoder, decoder, **parameters).to(parameters["device"])

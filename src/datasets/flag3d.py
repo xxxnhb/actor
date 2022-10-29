@@ -32,7 +32,15 @@ class flag3d(Dataset):
         self._label_to_action = {i: x for i, x in enumerate(keep_actions)}
 
         self._action_classes = humanact12_coarse_action_enumerator
-
+        self._tr_subjects = [1, 2, 3, 4, 5]
+        self._test_subjects = [6, 7, 8, 9, 10]
+        self._train = []
+        self._test = []
+        for index, x in enumerate(data['p']):
+            if x in self._tr_subjects:
+                self._train.append(index)
+            else:
+                self._test.append(index)
     def _load_joints3D(self, ind, frame_ix):
         return self._joints[ind][frame_ix]
 

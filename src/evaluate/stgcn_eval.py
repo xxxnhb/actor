@@ -2,10 +2,10 @@ import torch
 from tqdm import tqdm
 
 from src.utils.fixseed import fixseed
-from src.evaluate.action2motion.evaluate import A2MEvaluation_flag3d
 from src.evaluate.stgcn.evaluate import Evaluation as STGCNEvaluation
+from src.evaluate.stgcn.evaluate import Evaluation_flag3d as STGCNEvaluation_flag3d
 # from src.evaluate.othermetrics.evaluation import Evaluation
-from mmaction.models import STGCN
+# from mmaction.models import STGCN
 from torch.utils.data import DataLoader
 from src.utils.tensors import collate
 
@@ -77,35 +77,7 @@ class NewDataloader:
         return iter(self.batches)
 
 
-class NewDataloader_flag3d:
-    def __init__(self, mode, model, dataiterator, device):
-        assert mode in ["gen", "rc", "gt"]
-        self.batches = []
-        with torch.no_grad():
-            for databatch in tqdm(dataiterator, desc=f"Construct dataloader: {mode}.."):
-                if mode == "gen":
-                    classes = databatch["y"]
-                    gendurations = databatch["lengths"]
-                    batch = model.generate(classes, gendurations)
-                    batch = {key: val.to(device) for key, val in batch.items()}
-                elif mode == "gt":
-                    batch = {key: val.to(device) for key, val in databatch.items()}
-                    batch["x_xyz"] = model.rot2xyz(batch["x"].to(device),
-                                                   batch["mask"].to(device))
-                    batch["output"] = batch["x"]
-                    batch["output_xyz"] = batch["x_xyz"]
-                elif mode == "rc":
-                    databatch = {key: val.to(device) for key, val in databatch.items()}
-                    batch = model(databatch)
-                    batch["output_xyz"] = model.rot2xyz(batch["output"],
-                                                        batch["mask"])
-                    batch["x_xyz"] = model.rot2xyz(batch["x"],
-                                                   batch["mask"])
 
-                self.batches.append(batch)
-
-    def __iter__(self):
-        return iter(self.batches)
 
 
 def evaluate(parameters, folder, checkpointname, epoch, niter):
@@ -223,15 +195,15 @@ def evaluate(parameters, folder, checkpointname, epoch, niter):
 
 
 def evaluate_flag3d(parameters, folder, checkpointname, epoch, niter):
-    num_frames = 60
+    torch.multiprocessing.set_sharing_strategy('file_system')
+    # num_frames = parameters["num_frames"]
     bs = parameters["batch_size"]
     doing_recons = False
 
-    parameters["num_frames"] = num_frames
     parameters["jointstype"] = "smpl"
     parameters["vertstrans"] = True
-    parameters["nfeats"] = 3
-    parameters["num_classes"] = 60
+    parameters["nfeats"] = 6
+    # parameters["num_classes"] = 60
 
     device = parameters["device"]
     dataname = parameters["dataset"]
@@ -245,60 +217,83 @@ def evaluate_flag3d(parameters, folder, checkpointname, epoch, niter):
     state_dict = torch.load(checkpointpath, map_location=device)
     model.load_state_dict(state_dict)
     model.eval()
-    model.outputxyz = True
 
-    a2mevaluation = A2MEvaluation_flag3d(dataname, device, parameters)
-    a2mmetrics = {}
+    model.outputxyz = False
+
+    recogparameters = parameters.copy()
+    recogparameters["pose_rep"] = "rot6d"
+    recogparameters["nfeats"] = 6
+
+    stgcnevaluation = STGCNEvaluation_flag3d(dataname, recogparameters, device)
+    stgcn_metrics = {}
 
     # evaluation = OtherMetricsEvaluation(device)
     # joints_metrics = {}, pose_metrics = {}
 
-    datasetGT1 = get_datasets(parameters)["train"]
-    datasetGT2 = get_datasets(parameters)["train"]
+    compute_gt_gt = False
+    if compute_gt_gt:
+        datasetGT = {key: [get_datasets(parameters)[key],
+                           get_datasets(parameters)[key]]
+                     for key in ["train", "test"]}
+    else:
+        datasetGT = {key: [get_datasets(parameters)[key]]
+                     for key in ["train", "test"]}
+
+    print("Dataset loaded")
 
     allseeds = list(range(niter))
 
-    try:
-        for index, seed in enumerate(allseeds):
-            print(f"Evaluation number: {index + 1}/{niter}")
-            fixseed(seed)
+    for seed in allseeds:
+        fixseed(seed)
+        for key in ["train", "test"]:
+            for data in datasetGT[key]:
+                data.reset_shuffle()
+                data.shuffle()
 
-            datasetGT1.reset_shuffle()
-            datasetGT1.shuffle()
+        dataiterator = {key: [DataLoader(data, batch_size=bs,
+                                         shuffle=False, num_workers=8,
+                                         collate_fn=collate)
+                              for data in datasetGT[key]]
+                        for key in ["train", "test"]}
 
-            datasetGT2.reset_shuffle()
-            datasetGT2.shuffle()
+        if doing_recons:
+            reconsLoaders = {key: NewDataloader("rc", model, parameters,
+                                                dataiterator[key][0],
+                                                device)
+                             for key in ["train", "test"]}
 
-            dataiterator = DataLoader(datasetGT1, batch_size=parameters["batch_size"],
-                                      shuffle=False, num_workers=8, collate_fn=collate)
-            dataiterator2 = DataLoader(datasetGT2, batch_size=parameters["batch_size"],
-                                       shuffle=False, num_workers=8, collate_fn=collate)
+        gtLoaders = {key: NewDataloader("gt", model, parameters,
+                                        dataiterator[key][0],
+                                        device)
+                     for key in ["train", "test"]}
 
-            # reconstructedloader = NewDataloader("rc", model, dataiterator, device)
-            print("device is ", device)
-            motionloader = NewDataloader_flag3d("gen", model, dataiterator, device)
-            gt_motionloader = NewDataloader_flag3d("gt", model, dataiterator, device)
-            gt_motionloader2 = NewDataloader_flag3d("gt", model, dataiterator2, device)
+        if compute_gt_gt:
+            gtLoaders2 = {key: NewDataloader("gt", model, parameters,
+                                             dataiterator[key][1],
+                                             device)
+                          for key in ["train", "test"]}
 
-            # Action2motionEvaluation
-            loaders = {"gen": motionloader,
-                       # "recons": reconstructedloader,
-                       "gt": gt_motionloader,
-                       "gt2": gt_motionloader2}
+        genLoaders = {key: NewDataloader("gen", model, parameters,
+                                         dataiterator[key][0],
+                                         device)
+                      for key in ["train", "test"]}
 
-            a2mmetrics[seed] = a2mevaluation.evaluate(model, loaders)
+        loaders = {"gen": genLoaders,
+                   "gt": gtLoaders}
+        if doing_recons:
+            loaders["recons"] = reconsLoaders
 
-            # joints_metrics[seed] = evaluation.evaluate(model, num_classes,
-            # loaders, xyz=True)
-            # pose_metrics[seed] = evaluation.evaluate(model, num_classes,
-            # loaders, xyz=False)
+        if compute_gt_gt:
+            loaders["gt2"] = gtLoaders2
 
-    except KeyboardInterrupt:
-        string = "Saving the evaluation before exiting.."
-        print(string)
+        stgcn_metrics[seed] = stgcnevaluation.evaluate(model, loaders)
+        del loaders
 
-    metrics = {"feats": {key: [format_metrics(a2mmetrics[seed])[key] for seed in a2mmetrics.keys()] for key in
-                         a2mmetrics[allseeds[0]]}}
+        # joints_metrics = evaluation.evaluate(model, loaders, xyz=True)
+        # pose_metrics = evaluation.evaluate(model, loaders, xyz=False)
+
+    metrics = {"feats": {key: [format_metrics(stgcn_metrics[seed])[key] for seed in allseeds] for key in
+                         stgcn_metrics[allseeds[0]]}}
     # "xyz": {key: [format_metrics(joints_metrics[seed])[key] for seed in allseeds] for key in joints_metrics[allseeds[0]]},
     # model.pose_rep: {key: [format_metrics(pose_metrics[seed])[key] for seed in allseeds] for key in pose_metrics[allseeds[0]]}}
 

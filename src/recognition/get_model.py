@@ -3,6 +3,7 @@ import torch
 
 def get_model(parameters):
     layout = "smpl" if parameters["glob"] else "smpl_noglobal"
+    print("lll",layout)
     
     model = STGCN(in_channels=parameters["nfeats"],
                   num_class=parameters["num_classes"],
