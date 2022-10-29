@@ -243,7 +243,8 @@ def evaluate_flag3d(parameters, folder, checkpointname, epoch, niter):
 
     allseeds = list(range(niter))
 
-    for seed in allseeds:
+    for index, seed in enumerate(allseeds):
+        print(f"Evaluation number: {index + 1}/{niter}")
         fixseed(seed)
         for key in ["train", "test"]:
             for data in datasetGT[key]:

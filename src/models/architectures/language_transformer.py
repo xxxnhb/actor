@@ -71,7 +71,7 @@ print(flag3d_coarse_action_description)
 #
 # }
 # device ="cpu"
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
+device = "cuda:1" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 text = clip.tokenize(flag3d_text).to(device)
 print('text', text.shape)
