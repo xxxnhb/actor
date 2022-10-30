@@ -1,0 +1,1 @@
+python -m src.train.train_cvae --modelname cvae_transformer_rc_rcxyz_kl --pose_rep rot6d --lambda_kl 1e-5 --jointstype vertices --batch_size 20 --num_frames $1 --num_layers 8 --lr 0.0001 --glob --translation --no-vertstrans --dataset $2 --num_epochs 10000 --snapshot 100 --folder exps/$3 --cuda $4 --language $5 --small
