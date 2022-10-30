@@ -11,8 +11,12 @@ class flag3d(Dataset):
         self.datapath = datapath
 
         super().__init__(**kargs)
-
-        pkldatafilepath = os.path.join(datapath, "flag3d.pkl")
+        if kargs["small"]:
+            dataname = "flag3d_M001.pkl"
+        else:
+            dataname = "flag3d.pkl"
+        print("This dataset is ", dataname)
+        pkldatafilepath = os.path.join(datapath, dataname)
         data = pkl.load(open(pkldatafilepath, "rb"))
 
         self._pose = [x for x in data["poses"]]

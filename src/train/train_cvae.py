@@ -15,6 +15,7 @@ def do_epochs(model, datasets, parameters, optimizer, writer):
     dataset = datasets["train"]
     train_iterator = DataLoader(dataset, batch_size=parameters["batch_size"],
                                 shuffle=True, num_workers=8, collate_fn=collate)
+    print(len(train_iterator))
     logpath = os.path.join(parameters["folder"], "training.log")
     with open(logpath, "w") as logfile:
         for epoch in range(1, parameters["num_epochs"]+1):

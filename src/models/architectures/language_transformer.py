@@ -1,13 +1,16 @@
 import os
-
+from transformers import BertTokenizer
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import clip
 import pdb
+from src.train.train_cvae import parser
 
-
+parameters = parser()
+device = parameters["device"]
+language_option = parameters["language"]
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout=0.1, max_len=5000):
         super(PositionalEncoding, self).__init__()
@@ -43,18 +46,40 @@ class TimeEncoding(nn.Module):
         return self.dropout(x)
 
 
+
 flag3d_coarse_action_description = {}
 flag3d_text = []
 i = 0
 for text_name in os.listdir('data/flag3d_txt/'):
-    if text_name.endswith('001.txt'):
+    if text_name.endswith('00' + language_option + '.txt'):
         f = open('data/flag3d_txt/' + text_name)
         line = f.readline()
         flag3d_coarse_action_description[i] = line
         flag3d_text.append(line)
         i += 1
-print(flag3d_text)
-print(flag3d_coarse_action_description)
+# print(flag3d_text)
+# print(flag3d_coarse_action_description)
+tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+# if language_option == '1':
+#     max_length = 512
+bert_input = tokenizer(flag3d_text, padding='max_length',
+                       max_length=512,
+                       truncation=True,
+                       return_tensors="pt")
+actions_text_features = bert_input['input_ids'].to(device)
+print(actions_text_features.size())
+# model, preprocess = clip.load("ViT-B/32", device=device)
+# with torch.no_grad():
+#     actions_text_features = model.encode_text(actions_text_features)
+#     print("text_features", actions_text_features.shape)
+
+
+# model, preprocess = clip.load("ViT-B/32", device=device)
+# text = clip.tokenize(flag3d_text).to(device)
+# print('text', text.shape)
+# with torch.no_grad():
+#     actions_text_features = model.encode_text(text)
+#     print("text_features", actions_text_features.shape)
 # humanact12_coarse_action_description = {
 #     0: "A man is warming up",
 #     1: "A man is walking",
@@ -71,10 +96,7 @@ print(flag3d_coarse_action_description)
 #
 # }
 # device ="cpu"
-device = "cuda:1" if torch.cuda.is_available() else "cpu"
-model, preprocess = clip.load("ViT-B/32", device=device)
-text = clip.tokenize(flag3d_text).to(device)
-print('text', text.shape)
+
 # device = "cuda" if torch.cuda.is_available() else "cpu"
 # model, preprocess = clip.load("ViT-B/32", device=device)
 # text = clip.tokenize(
@@ -82,11 +104,6 @@ print('text', text.shape)
 #      "A man is lifting dumbbell", "A man is siting", "A man is eating", "A man is turning steering wheel",
 #      "A man is putting a phone call", "A man is boxing", "A man is throwing"]).to(device)
 # print('text', text.shape)
-
-with torch.no_grad():
-    actions_text_features = model.encode_text(text)
-    print("text_features", actions_text_features.shape)
-
 
 class Encoder_TRANSFORMER(nn.Module):
     def __init__(self, modeltype, njoints, nfeats, num_frames, num_classes, translation, pose_rep, glob, glob_rot,

@@ -13,6 +13,7 @@ def add_dataset_options(parser):
     group.add_argument("--max_len", default=-1, type=int, help="number of frames maximum per sequence or -1")
     group.add_argument("--min_len", default=-1, type=int, help="number of frames minimum per sequence or -1")
     group.add_argument("--num_seq_max", default=-1, type=int, help="number of sequences maximum to load or -1")
+    group.add_argument("--small", default=False, action='store_true', help="number of sequences maximum to load or -1")
 
     group.add_argument("--glob", dest='glob', action='store_true', help="if we want global rotation")
     group.add_argument('--no-glob', dest='glob', action='store_false', help="if we don't want global rotation")

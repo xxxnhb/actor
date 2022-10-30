@@ -9,7 +9,7 @@ ARCHINAMES = ["fc", "gru", "transformer", "transgru", "grutrans", "autotrans"]
 
 
 def get_model(parameters):
-    if not parameters["language"]:
+    if parameters["language"] == '0':
         modeltype = parameters["modeltype"]
         print(modeltype)
         archiname = parameters["archiname"]
