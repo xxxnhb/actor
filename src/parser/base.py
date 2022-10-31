@@ -19,7 +19,6 @@ def adding_cuda(parameters):
     import torch
     if parameters['cpu'] and torch.cuda.is_available():
         parameters["device"] = torch.device("cuda:" + parameters["cuda"])
-        print("cuda:" + parameters["cuda"])
     else:
         parameters["device"] = torch.device("cpu")
         

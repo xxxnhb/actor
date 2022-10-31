@@ -6,11 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import clip
 import pdb
-from src.train.train_cvae import parser
-
+# from src.train.train_cvae import parser
+from src.parser.generate import parser
 parameters = parser()
-device = parameters["device"]
-language_option = parameters["language"]
+device = "cpu"
+language_option = '1'
+# device = parameters["device"]
+# language_option = parameters["language"]
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout=0.1, max_len=5000):
         super(PositionalEncoding, self).__init__()

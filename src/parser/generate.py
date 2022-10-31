@@ -25,7 +25,8 @@ def add_generation_options(parser):
 def parser():
     parser = ArgumentParser()
     parser.add_argument("checkpointname")
-    parser.add_argument("--language", action='store_true', default=False, help="if we want to use language")
+    parser.add_argument("--language", type=str, default=0, help="if we want to use language, 0 for none, 1 for name, 2 "
+                                                               "for description")
     # add visualize options back
     add_generation_options(parser)
 

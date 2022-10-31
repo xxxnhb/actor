@@ -119,7 +119,6 @@ def generate_actions(beta, model, dataset, epoch, params, folder, num_frames=60,
 def main():
     parameters, folder, checkpointname, epoch = parser()
     nspa = parameters["num_samples_per_action"]
-
     # no dataset needed
     if parameters["mode"] in []:   # ["gen", "duration", "interpolate"]:
         model = get_model(parameters)
