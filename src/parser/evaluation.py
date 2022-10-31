@@ -12,6 +12,9 @@ def parser():
     parser.add_argument("--num_frames", default=60, type=int, help="number of frames or -1")
     parser.add_argument("--niter", default=20, type=int, help="number of iterations")
     parser.add_argument("--num_seq_max", default=3000, type=int, help="number of sequences maximum to load or -1")
+    parser.add_argument("--language", type=str, default='0', help="if we want to use language, 0 for none, 1 for name, 2 "
+                                                               "for description")
+    parser.add_argument("--small", default=False, action='store_true', help="number of sequences maximum to load or -1")
     # cuda options
     add_cuda_options(parser)
     
